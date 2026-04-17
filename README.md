@@ -1,6 +1,6 @@
 # ccview
 
-A TUI companion for [Claude Code](https://claude.ai/claude-code). Gives AI output a visual layer.
+A TUI companion for [Claude Code](https://code.claude.com/docs/en/overview). Gives AI output a visual layer.
 
 ```
 ┌─ ccview ─────────────────────────────────────────────────────┐
