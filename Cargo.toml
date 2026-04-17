@@ -1,0 +1,16 @@
+[package]
+name = "ccview"
+version = "0.1.0"
+edition = "2021"
+description = "A companion viewer for Claude Code — gives AI output a visual layer"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+notify = { version = "7", features = ["macos_fsevent"] }
+dirs = "6"
+chrono = { version = "0.4", features = ["serde"] }
+textwrap = "0.16"
+unicode-width = "0.2"
