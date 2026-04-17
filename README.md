@@ -1,8 +1,6 @@
 # ccview
 
-A TUI companion app for [Claude Code](https://claude.ai/claude-code). Gives AI output a visual layer.
-
-Claude Code writes JSON files. ccview renders them — tables, charts, checklists, timelines, metrics — live in your terminal. No servers, no browsers, no config.
+A TUI companion for [Claude Code](https://claude.ai/claude-code). Gives AI output a visual layer.
 
 ```
 ┌─ ccview ─────────────────────────────────────────────────────┐
@@ -30,19 +28,17 @@ Claude Code writes JSON files. ccview renders them — tables, charts, checklist
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Install
+## Get Started
 
-**One-line install (macOS / Linux):**
+### 1. Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/aravs16/ccview/main/install.sh | sh
 ```
 
-This downloads the right binary for your platform, installs it to `/usr/local/bin`, creates `~/.ccview/pages/`, and sets up the Claude Code skill if CC is installed. No Rust required.
+This installs the binary and sets up Claude Code integration automatically. No Rust needed.
 
-**Manual download:**
-
-Go to [Releases](https://github.com/aravs16/ccview/releases), download the binary for your platform:
+Or download a binary from [Releases](https://github.com/aravs16/ccview/releases):
 
 | Platform | Binary |
 |----------|--------|
@@ -52,152 +48,127 @@ Go to [Releases](https://github.com/aravs16/ccview/releases), download the binar
 | Linux (ARM) | `ccview-aarch64-unknown-linux-gnu` |
 | Windows (x86_64) | `ccview-x86_64-pc-windows-msvc.exe` |
 
-```bash
-chmod +x ccview-* && sudo mv ccview-* /usr/local/bin/ccview
+### 2. Use with Claude Code
+
+The installer copies a skill file to `~/.claude/skills/view/`. This teaches Claude Code the ccview format. Now you can:
+
+**Ask Claude Code directly:**
+```
+> analyze my spending and publish to ccview
+> create a ccview page comparing NVDA vs AVGO
 ```
 
-**From source (requires Rust):**
-
-```bash
-git clone https://github.com/aravs16/ccview.git
-cd ccview
-cargo install --path .
+**Use the `/view` slash command** after any skill:
+```
+> /financial-analyst 2026-03
+> /view
 ```
 
-## How it works
+**Add ccview output to your own skills** — add this to any SKILL.md:
+```markdown
+If ~/.ccview/pages/ exists, also publish results as a ccview page.
+Write to ~/.ccview/pages/<channel>/<page-id>.json using the ccview block format.
+```
+
+### 3. Launch the viewer
+
+```bash
+ccview
+```
+
+Pages appear in the sidebar as Claude Code writes them. Live — no restart needed.
+
+### 4. Navigate
+
+| Sidebar | Content | Interactive |
+|---------|---------|------------|
+| `j/k` navigate | `j/k` scroll | `j/k` move between items |
+| `Enter` open page | `i` enter interactive mode | `x` toggle checkbox |
+| `/` filter | `Esc` back to sidebar | `Enter` expand/collapse section |
+| `d` delete | `Tab` switch pane | `Esc` exit interactive mode |
+| `q` quit | | |
+
+---
+
+## How It Works
 
 ```
 Claude Code (writes JSON) → ~/.ccview/pages/ → ccview (renders live)
 ```
 
-1. Claude Code skills write JSON files to `~/.ccview/pages/`
-2. ccview watches the directory and renders pages in real-time
-3. User interactions (checkbox toggles, section collapses) are stored separately so CC can overwrite pages without losing your state
+CC writes a JSON file. ccview watches the directory and renders it instantly. User interactions (checkbox toggles, section collapses) are stored separately in `~/.ccview/state/` — CC can overwrite pages without losing your state.
 
-That's it. No servers, no APIs, no databases, no config files.
+No servers, no APIs, no databases, no config files.
 
-## Quick start
-
-```bash
-# Launch ccview
-ccview
-
-# In another terminal, create a page
-cat > ~/.ccview/pages/hello.json << 'EOF'
-{
-  "title": "Hello World",
-  "created": "2026-04-16T10:00:00Z",
-  "updated": "2026-04-16T10:00:00Z",
-  "blocks": [
-    {
-      "type": "callout",
-      "style": "success",
-      "title": "It works",
-      "content": "This page appeared in ccview without restarting."
-    }
-  ]
-}
-EOF
-```
-
-The page appears instantly in ccview's sidebar. No restart needed.
-
-## Keyboard shortcuts
-
-### Sidebar (page list)
-
-| Key | Action |
-|-----|--------|
-| `j` / `↓` | Next page |
-| `k` / `↑` | Previous page |
-| `Enter` | View page content |
-| `Tab` | Switch to content pane |
-| `/` | Filter pages by name |
-| `d` | Delete current page |
-| `q` | Quit |
-
-### Content (viewing a page)
-
-| Key | Action |
-|-----|--------|
-| `j` / `↓` | Scroll down |
-| `k` / `↑` | Scroll up |
-| `i` | Enter interactive mode |
-| `Esc` | Back to sidebar |
-| `Tab` | Switch to sidebar |
-
-### Interactive mode (checklists, sections)
-
-| Key | Action |
-|-----|--------|
-| `j` / `↓` | Next interactive item |
-| `k` / `↑` | Previous interactive item |
-| `x` / `Space` / `Enter` | Toggle checkbox or collapse/expand section |
-| `Esc` | Exit interactive mode |
-
-## Page format
+## Page Format
 
 A page is a JSON file with a title and an array of blocks:
 
 ```json
 {
-  "title": "Page Title",
-  "subtitle": "optional subtitle",
+  "title": "Monthly Report",
+  "subtitle": "/financial-analyst",
   "channel": "finance",
   "created": "2026-04-16T10:00:00Z",
   "updated": "2026-04-16T10:00:00Z",
   "pinned": false,
-  "tags": ["tag1", "tag2"],
   "ttl": "7d",
-  "blocks": [...]
+  "blocks": [
+    { "type": "metrics", "items": [{ "label": "Revenue", "value": "$68B", "sentiment": "positive" }] },
+    { "type": "table", "title": "Top Items", "columns": ["Name", "Amount"], "rows": [{"name": "AWS", "amount": "$1,369"}] },
+    { "type": "callout", "style": "warning", "title": "Alert", "content": "AWS bill spiked 37%." }
+  ]
 }
 ```
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `title` | yes | Page title, shown in sidebar |
-| `subtitle` | no | Secondary text |
-| `channel` | no | Groups pages in sidebar (default: `_inbox`) |
-| `created` | yes | ISO 8601 datetime |
-| `updated` | yes | ISO 8601 datetime |
-| `pinned` | no | Pinned pages show at top with ★ |
-| `tags` | no | For filtering with `/` |
-| `ttl` | no | Auto-expire: `1h`, `1d`, `7d`, `30d`, `forever` (default: `7d`) |
-
-### Channels
-
-Pages are organized into channels via subdirectories:
+Pages are organized into **channels** via subdirectories:
 
 ```
 ~/.ccview/pages/
-├── finance/
-│   ├── report-march.json
-│   └── weekly-review.json
+├── finance/          ← channel
+│   └── report.json
 ├── stocks/
-│   └── nvda-research.json
-├── ci/
-│   └── deploy-status.json
-└── _inbox/           ← default for uncategorized pages
+│   └── nvda.json
+└── _inbox/           ← default
 ```
 
-The `channel` field in JSON is optional — if omitted, the subdirectory name is used.
+## Block Types
 
-## Block types
+12 block types cover most structured output:
 
-### `metrics` — KPI cards
+| Type | What it renders | Example use |
+|------|----------------|-------------|
+| `metrics` | KPI cards in a row | Revenue, EPS, build status |
+| `table` | Data table | Top merchants, test results |
+| `chart` | Bar chart | Monthly trends, comparisons |
+| `markdown` | Rich text | Analysis, explanations |
+| `callout` | Alert box (info/success/warning/error) | Flags, alerts |
+| `timeline` | Vertical event timeline | Earnings dates, catalysts |
+| `kv` | Key-value pairs | Stock details, config |
+| `code` | Syntax-highlighted code | Diffs, commands |
+| `progress` | Progress bars | Budgets, goals |
+| `list` | Bullet list or interactive checklist | Action items |
+| `section` | Collapsible group of blocks | Details, breakdowns |
+| `divider` | Separator with optional label | Section breaks |
+
+<details>
+<summary>Full block reference with JSON examples</summary>
+
+### metrics
 
 ```json
 {
   "type": "metrics",
   "items": [
-    { "label": "Revenue", "value": "$68B", "change": "+73%", "sentiment": "positive" }
+    { "label": "Revenue", "value": "$68B", "change": "+73%", "sentiment": "positive" },
+    { "label": "EPS", "value": "$1.62", "sentiment": "positive" }
   ]
 }
 ```
 
-`sentiment`: `"positive"` (green) · `"negative"` (red) · omit (white)
+`sentiment`: `"positive"` (green) / `"negative"` (red) / omit (white)
 
-### `table` — Data table
+### table
 
 ```json
 {
@@ -213,7 +184,7 @@ The `channel` field in JSON is optional — if omitted, the subdirectory name is
 }
 ```
 
-### `chart` — Bar chart
+### chart
 
 ```json
 {
@@ -227,73 +198,74 @@ The `channel` field in JSON is optional — if omitted, the subdirectory name is
 }
 ```
 
-### `markdown` — Rich text
+### markdown
 
 ```json
-{ "type": "markdown", "content": "## Title\n\nSome **bold** text.\n\n- Bullet one\n- Bullet two" }
+{ "type": "markdown", "content": "## Findings\n\nYour **AWS bill** is out of control.\n\n- Cancel ChatGPT\n- Fix Chase fee" }
 ```
 
-### `callout` — Alert box
+### callout
 
 ```json
-{ "type": "callout", "style": "warning", "title": "Alert", "content": "Something needs attention." }
+{ "type": "callout", "style": "warning", "title": "Cost Alert", "content": "AWS bill increased 37%." }
 ```
 
-`style`: `"info"` · `"success"` · `"warning"` · `"error"`
+Styles: `info` / `success` / `warning` / `error`
 
-### `timeline` — Ordered events
+### timeline
 
 ```json
 {
   "type": "timeline",
-  "title": "Upcoming",
+  "title": "Catalysts",
   "items": [
     { "date": "May 20", "title": "NVDA Earnings", "description": "Q1 FY2027", "color": "green" }
   ]
 }
 ```
 
-### `kv` — Key-value pairs
+### kv
 
 ```json
-{ "type": "kv", "title": "Details", "items": [{ "key": "Price", "value": "$196" }] }
+{ "type": "kv", "title": "Details", "items": [{ "key": "Price", "value": "$196.51" }] }
 ```
 
-### `code` — Code block
+### code
 
 ```json
 { "type": "code", "language": "python", "content": "print('hello')" }
 ```
 
-### `progress` — Progress bars
+### progress
 
 ```json
 {
   "type": "progress",
   "items": [
-    { "label": "Budget", "value": 397, "max": 500, "color": "green" }
+    { "label": "Dining Budget", "value": 397, "max": 500, "color": "green" },
+    { "label": "Shopping", "value": 680, "max": 500, "color": "red" }
   ]
 }
 ```
 
-### `list` — Bullet list or interactive checklist
+### list (interactive)
 
 ```json
 {
   "type": "list",
-  "id": "my-tasks",
-  "title": "Tasks",
+  "id": "tasks",
+  "title": "Action Items",
   "style": "checklist",
   "items": [
-    { "text": "Do the thing", "checked": false },
-    { "text": "Already done", "checked": true }
+    { "text": "Cancel ChatGPT", "checked": false },
+    { "text": "Fix Chase fee", "checked": true }
   ]
 }
 ```
 
-Checklists are interactive — press `i` then `x` to toggle items. State persists across page updates.
+Press `i` then `x` to toggle checkboxes. State persists even when CC rewrites the page.
 
-### `section` — Collapsible group
+### section (collapsible)
 
 ```json
 {
@@ -301,98 +273,80 @@ Checklists are interactive — press `i` then `x` to toggle items. State persist
   "id": "details",
   "title": "Details",
   "collapsed": true,
-  "blocks": [...]
+  "blocks": [ ...nested blocks... ]
 }
 ```
 
-Press `Enter` on a focused section to expand/collapse. Nested blocks render inside.
-
-### `divider` — Separator
+### divider
 
 ```json
 { "type": "divider", "label": "Optional Label" }
 ```
 
-## Interactive state
+</details>
 
-User interactions are stored separately from page content:
+## Interactive State
+
+User state is stored separately from page content:
 
 ```
 ~/.ccview/
-├── pages/          ← CC writes here (content)
-│   └── finance/
-│       └── review.json
-└── state/          ← ccview writes here (user state)
-    └── finance/
-        └── review.state.json
+├── pages/    ← Claude Code writes here (content)
+└── state/    ← ccview writes here (checkboxes, collapses, scroll)
 ```
 
-When CC overwrites a page, your checkbox states and collapse preferences survive. The state file looks like:
+CC overwrites a page → your checkbox states survive. Set `"id"` on interactive blocks for stable state across regenerations.
 
-```json
-{
-  "checks": {
-    "my-tasks": { "0": true, "2": true }
-  },
-  "collapsed": {
-    "details": false
-  },
-  "scroll": 12
-}
-```
+## For Skill Authors
 
-Blocks use the `id` field as the state key. If no `id` is set, the block index (`block-0`, `block-1`, ...) is used. For stable state across page regenerations, always set explicit `id` values on interactive blocks.
+Want your Claude Code skill to produce ccview output? Two options:
 
-## Claude Code integration
+**Option A:** Tell users to run `/view` after your skill.
 
-ccview ships with a skill file that teaches Claude Code the page format. After installing ccview, copy the skill:
-
-```bash
-mkdir -p ~/.claude/skills/view
-cp skill/SKILL.md ~/.claude/skills/view/SKILL.md
-```
-
-Now Claude Code knows how to write ccview pages. You can:
-
-- Ask CC to "publish that to ccview"
-- Run `/view` after any skill
-- Add ccview output to your own custom skills
-
-### Adding ccview output to an existing skill
-
-Add this to your skill's SKILL.md:
+**Option B:** Add ccview output directly to your skill. Add this to your SKILL.md:
 
 ```markdown
 ## Visual Output
 
-If ~/.ccview/pages/ exists, also publish results as a ccview page.
-Write to ~/.ccview/pages/<channel>/<page-id>.json using the ccview block format.
+If ~/.ccview/pages/ exists, write results to ~/.ccview/pages/<channel>/<id>.json:
+- metrics block for summary KPIs
+- table block for tabular data
+- callout block for alerts
+- list block with checklist style for action items
 ```
 
-CC reads this and knows to write the JSON alongside its normal output.
+The full block schema is in `skill/SKILL.md` in this repo.
+
+## Build from Source
+
+```bash
+git clone https://github.com/aravs16/ccview.git
+cd ccview
+cargo install --path .
+```
 
 ## Architecture
 
 ```
 src/
-├── main.rs       ← TUI app loop, keyboard handling, layout
-├── protocol.rs   ← Page/Block type definitions (serde)
+├── main.rs       ← TUI app, keyboard handling, layout
+├── protocol.rs   ← Page/Block type definitions
 ├── loader.rs     ← File discovery, channel grouping
-├── render.rs     ← Block → TUI line rendering
-└── state.rs      ← User interaction state (read/write)
+├── render.rs     ← Block → terminal rendering
+└── state.rs      ← User interaction persistence
 ```
 
-**~600 lines of Rust.** No async runtime, no networking, no database. Reads files, renders them, writes state.
+~850 lines of Rust. 1.4MB binary. <10ms startup.
 
 ## Roadmap
 
 - [ ] `--web` flag for rich HTML view on localhost
-- [ ] `--export` for standalone HTML file output
-- [ ] Table sorting (click column headers)
-- [ ] Page linking (`{ "type": "link", "page": "other-page" }`)
-- [ ] Page history (keep last N versions on overwrite)
+- [ ] `--export` for standalone HTML output
+- [ ] Table sorting
+- [ ] Page linking
+- [ ] Page version history
 - [ ] `brew install ccview`
-- [ ] `cargo install ccview` (publish to crates.io)
+- [ ] Publish to crates.io
 
 ## License
 
